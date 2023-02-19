@@ -1,3 +1,3 @@
 #!/bin/bash
-gcc -O2 G.c -lutil -o lph
+gcc -O2 g.c -lutil -o lph
 strip lph
